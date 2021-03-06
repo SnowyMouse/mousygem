@@ -245,11 +245,15 @@ namespace Mousygem {
         client->socket->destroy();
     }
         
-    void Server::accept_clients() {
+    void Server::accept_clients(unsigned long maximum_parallel_connections) {
         // Can we do that?
         if(this->server_running) {
             throw std::runtime_error("Server::accept_clients() called while accepting clients");
         }
+        if(!this->shutdown_mutex.try_lock()) {
+            throw std::runtime_error("Server::accept_clients() called while shutting down");
+        }
+        this->shutdown_mutex.unlock();
         
         // Start
         this->server_running = true;
@@ -307,11 +311,36 @@ namespace Mousygem {
         while(true) {
             // Are we shutting down?
             if(!shutdown_mutex.try_lock()) {
-                break;
+                goto destroy_socket_now_spaghetti;
             }
             
             // Nope? Okay.
             shutdown_mutex.unlock();
+            
+            // Check maximum clients to see if we can spawn another parallel thread
+            if(maximum_parallel_connections > 0) {
+                while(true) {
+                    // Are we shutting down?
+                    if(!shutdown_mutex.try_lock()) {
+                        goto destroy_socket_now_spaghetti;
+                    }
+                    
+                    // One can never be too sure
+                    shutdown_mutex.unlock();
+                    
+                    // Check the current client count
+                    this->connected_clients_mutex.lock();
+                    auto current_count = this->connected_clients;
+                    this->connected_clients_mutex.unlock();
+                    
+                    // Wait if we're at the maximum or above
+                    if(current_count < maximum_parallel_connections) {
+                        break;
+                    }
+                    
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10)); // prevent busy waiting
+                }
+            }
             
             // Listen for a client
             sockaddr_storage client_address;
@@ -332,8 +361,15 @@ namespace Mousygem {
             client->socket_address = std::make_unique<SocketAddress>(client_address, client_address_length);
             
             // Serve the client
-            std::thread(serve_client, this, ssl, client).detach();
+            if(maximum_parallel_connections == 0) {
+                serve_client(this, ssl, client); // parallel connections are disabled - use the main thread
+            }
+            else {
+                std::thread(serve_client, this, ssl, client).detach(); // split off to a thread
+            }
         }
+        
+        destroy_socket_now_spaghetti:
         
         // Done
         socket.destroy();

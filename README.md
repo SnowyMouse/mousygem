@@ -1,5 +1,7 @@
 # Mousygem
-Mousygem is a simple C++ based library for writing Gemini servers.
+Mousygem is a simple C++ based library for writing Gemini servers. It handles
+creating sockets, (most) OpenSSL functions, accepting clients, receiving/parsing
+URIs, and formatting/sending responses to the client.
 
 ## Requirements
 - C++17 compiler
@@ -7,7 +9,8 @@ Mousygem is a simple C++ based library for writing Gemini servers.
 - CMake 3.12 or newer
 
 ## Example implementation
-Here is a very simple implementation of a working server in 31 lines of code.
+Here is a very simple implementation of a working server in 31 lines of C++
+code.
 
 ```cpp
 #include <cstdint>

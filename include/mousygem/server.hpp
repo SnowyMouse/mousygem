@@ -44,8 +44,10 @@ namespace Mousygem {
         
         /**
          * Begin accepting clients. This blocks until after shutdown() is called and all clients have disconnected. The TLS certificate and key must be set before this is called. This must not be called while clients are connected.
+         * 
+         * @param maximum_parallel_connections Maximum number of parallel connections. Setting to 0 disables multi-threading. If this is exceeded, clients will have to wait.
          */
-        void accept_clients();
+        void accept_clients(unsigned long maximum_parallel_connections = 256);
         
         /**
          * Stop accepting clients. Clients still connected will not be immediately dropped. Block until all clients have disconnected. This function is thread-safe, but it will cause a deadlock if called within respond().
