@@ -7,6 +7,9 @@ project(mousygem
 
 # Here's our library
 add_library(mousygem
+    src/socket.cpp
+    src/server.cpp
+    src/ssl_context.cpp
     src/uri.cpp
 )
 
@@ -14,6 +17,8 @@ add_library(mousygem
 target_include_directories(mousygem
     PUBLIC include/
 )
+
+target_link_libraries(mousygem ssl crypto pthread)
 
 # Use C++17 (std::filesystem among other things)
 set_property(TARGET mousygem PROPERTY CXX_STANDARD 17)
