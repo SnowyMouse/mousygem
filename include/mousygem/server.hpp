@@ -46,7 +46,7 @@ namespace Mousygem {
         void accept_clients();
         
         /**
-         * Stop accepting clients. Clients still connected will not be immediately dropped. Block until all clients have disconnected. This function is thread-safe.
+         * Stop accepting clients. Clients still connected will not be immediately dropped. Block until all clients have disconnected. This function is thread-safe, but it will cause a deadlock if called within respond().
          */
         void shutdown();
         
