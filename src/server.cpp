@@ -22,6 +22,11 @@ namespace Mousygem {
     Server::Server(const char *ip_hostname, std::uint16_t port) {
         this->ssl_context = std::make_unique<SSLContext>();
         
+        // Enable peer verification
+        SSL_CTX_set_verify(this->ssl_context->get_context(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, [](int, X509_STORE_CTX *) {
+            return 1;
+        });
+        
         // I hate BSD sockets. Let's begin.
         sockaddr_storage address = {};
         socklen_t address_size;
@@ -74,6 +79,7 @@ namespace Mousygem {
         
         // Let's do this
         auto *ssl = reinterpret_cast<SSL *>(ssl_handle);
+        
         auto response = Response(Response::ResponseCode::TemporaryFailure, "error");
         SSL_set_fd(ssl, *client->socket->socket);
         
@@ -113,6 +119,15 @@ namespace Mousygem {
                         error = true;
                     }
                     
+                    // Check if we got a certificate from them
+                    auto *peer_certificate = SSL_get_peer_certificate(ssl);
+                    if(peer_certificate) {
+                        unsigned char *data = nullptr;
+                        int length = i2d_X509(peer_certificate, &data);
+                        client->certificate = std::vector<std::byte>(reinterpret_cast<std::byte *>(data), reinterpret_cast<std::byte *>(data) + length);
+                        OPENSSL_free(data);
+                        client->certificate_verified = SSL_get_verify_result(ssl) == X509_V_OK;
+                    }
                     response = server->respond(requested_uri, *client);
                 }
                 catch(std::exception &) {
