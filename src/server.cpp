@@ -80,8 +80,6 @@ namespace Mousygem {
         SSL_set_fd(ssl, *client_handle.socket);
         
         bool error = false;
-        std::optional<URI> requested_uri;
-        
         Client client; // TODO
         
         // Try to accept it
@@ -111,14 +109,14 @@ namespace Mousygem {
             // Validate it.
             if(!error) {
                 try {
-                    requested_uri = uri_input;
+                    URI requested_uri = std::string(uri_input, offset - 2);
                     
                     // Only accept gemini connections
-                    if(requested_uri->protocol() != "gemini") {
+                    if(requested_uri.protocol() != "gemini") {
                         error = true;
                     }
                     
-                    response = server->respond(URI(uri_input), client);
+                    response = server->respond(requested_uri, client);
                 }
                 catch(std::exception &) {
                     error = true;
