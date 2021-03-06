@@ -34,7 +34,7 @@ namespace Mousygem {
             addrinfo_hints.ai_socktype = SOCK_STREAM;
             
             auto ai = getaddrinfo(ip_hostname, std::to_string(port).c_str(), &addrinfo_hints, &addrinfo_result);
-            if(ai == 0) {
+            if(ai != 0) {
                 throw std::runtime_error(std::string("could not resolve ") + ip_hostname + ":" + std::to_string(port) + " to an address");
             }
             
