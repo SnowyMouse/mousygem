@@ -57,7 +57,7 @@ namespace Mousygem {
         
         // Set it
         this->address = std::make_unique<SocketAddress>(address, address_size);
-        this->address->any = ip_hostname == nullptr;
+        this->ipv4_and_ipv6 = ip_hostname == nullptr;
     }
     
     void Server::use_tls_certificate(const std::filesystem::path &path) {
@@ -253,7 +253,7 @@ namespace Mousygem {
         #endif
         
         // Support both IPv6 and IPv4 if we're doing all addresses
-        if(this->address->any) {
+        if(this->ipv4_and_ipv6) {
             if(setsockopt(socket_handle, IPPROTO_IPV6, IPV6_V6ONLY, &sockopt_off, sizeof(sockopt_off)) < 0) {
                 throw except_latest_error("setsockopt failed (when disabling IPV6_ONLY)");
             }

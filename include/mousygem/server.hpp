@@ -96,6 +96,9 @@ namespace Mousygem {
         
         /** Serve the client (thread) */
         static void serve_client(Server *server, void *ssl_handle, Client *client) noexcept;
+        
+        /** Serve on both ipv4/ipv6 */
+        bool ipv4_and_ipv6 = false;
     };
 }
 

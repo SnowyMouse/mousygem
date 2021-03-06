@@ -9,8 +9,10 @@
 
 namespace Mousygem {
     struct Socket {
+        // Socket handle
         std::optional<int> socket;
         
+        // Destroy said socket handle
         void destroy() {
             if(socket.has_value()) {
                 close(*this->socket);
@@ -28,7 +30,6 @@ namespace Mousygem {
     struct SocketAddress {
         sockaddr_storage ss;
         socklen_t ss_size;
-        bool any = false;
         
         std::string ip_address() const;
         
