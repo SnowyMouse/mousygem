@@ -19,12 +19,6 @@ namespace Mousygem {
         return std::runtime_error(message + ": " + strerrorname_np(error_number) + " - " + strerrordesc_np(error_number));
     }
     
-    struct Server::SocketAddress {
-        sockaddr_storage addr;
-        socklen_t size;
-        bool any;
-    };
-    
     Server::Server(const char *ip_hostname, std::uint16_t port) {
         this->ssl_context = std::make_unique<SSLContext>();
         
@@ -62,7 +56,8 @@ namespace Mousygem {
         }
         
         // Set it
-        this->address = std::make_unique<Server::SocketAddress>(Server::SocketAddress { address, address_size, ip_hostname == nullptr });
+        this->address = std::make_unique<SocketAddress>(address, address_size);
+        this->address->any = ip_hostname == nullptr;
     }
     
     void Server::use_tls_certificate(const std::filesystem::path &path) {
@@ -73,14 +68,16 @@ namespace Mousygem {
         SSL_CTX_use_PrivateKey_file(this->ssl_context->get_context(), path.string().c_str(), SSL_FILETYPE_PEM);
     }
     
-    void Server::serve_client(Server *server, void *ssl_handle, Socket client_handle) noexcept {
+    void Server::serve_client(Server *server, void *ssl_handle, Client *client) noexcept {
+        // Assign to a unique_ptr to avoid leakage
+        std::unique_ptr<Client> client_unique_ptr(client);
+        
         // Let's do this
         auto *ssl = reinterpret_cast<SSL *>(ssl_handle);
         auto response = Response(Response::ResponseCode::TemporaryFailure, "error");
-        SSL_set_fd(ssl, *client_handle.socket);
+        SSL_set_fd(ssl, *client->socket->socket);
         
         bool error = false;
-        Client client; // TODO
         
         // Try to accept it
         if(!SSL_accept(ssl)) {
@@ -116,7 +113,7 @@ namespace Mousygem {
                         error = true;
                     }
                     
-                    response = server->respond(requested_uri, client);
+                    response = server->respond(requested_uri, *client);
                 }
                 catch(std::exception &) {
                     error = true;
@@ -227,7 +224,7 @@ namespace Mousygem {
         // Cleanup
         SSL_shutdown(ssl);
         SSL_free(ssl);
-        client_handle.destroy();
+        client->socket->destroy();
     }
         
     void Server::accept_clients() {
@@ -241,7 +238,7 @@ namespace Mousygem {
         
         // Make the actual socket
         int socket_flags = 0;
-        auto socket_handle = socket(this->address->addr.ss_family, SOCK_STREAM, socket_flags);
+        auto socket_handle = socket(this->address->ss.ss_family, SOCK_STREAM, socket_flags);
         
         // Failed to make a socket
         if(socket_handle < 0) {
@@ -274,7 +271,7 @@ namespace Mousygem {
         setsockopt(socket_handle, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
         
         // Actually bind now
-        if(bind(socket_handle, reinterpret_cast<sockaddr *>(&this->address->addr), this->address->size) < 0) {
+        if(bind(socket_handle, reinterpret_cast<sockaddr *>(&this->address->ss), this->address->ss_size) < 0) {
             close(socket_handle);
             throw except_latest_error("bind failed");
         }
@@ -312,8 +309,12 @@ namespace Mousygem {
             this->connected_clients++;
             this->connected_clients_mutex.unlock();
             
+            auto *client = new Client;
+            client->socket = std::make_unique<Socket>(client_handle);
+            client->socket_address = std::make_unique<SocketAddress>(client_address, client_address_length);
+            
             // Serve the client
-            std::thread(serve_client, this, ssl, Socket(client_handle)).detach();
+            std::thread(serve_client, this, ssl, client).detach();
         }
         
         // Done

@@ -7,6 +7,7 @@ project(mousygem
 
 # Here's our library
 add_library(mousygem
+    src/client.cpp
     src/socket.cpp
     src/server.cpp
     src/ssl_context.cpp

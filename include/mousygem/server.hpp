@@ -12,6 +12,8 @@ namespace Mousygem {
     class Client;
     
     struct Socket;
+    struct SocketAddress;
+    
     class SSLContext;
     
     /**
@@ -75,7 +77,6 @@ namespace Mousygem {
         std::unique_ptr<SSLContext> ssl_context;
         
         /** Implementation-specific socket address */
-        struct SocketAddress;
         std::unique_ptr<SocketAddress> address;
         
         /** Number of currently connected clients */
@@ -94,7 +95,7 @@ namespace Mousygem {
         std::mutex connected_clients_mutex;
         
         /** Serve the client (thread) */
-        static void serve_client(Server *server, void *ssl_handle, Socket client_handle) noexcept;
+        static void serve_client(Server *server, void *ssl_handle, Client *client) noexcept;
     };
 }
 
