@@ -3,6 +3,8 @@ Mousygem is a simple C++ based library for writing Gemini servers. It handles
 creating sockets, (most) OpenSSL functions, accepting clients, receiving/parsing
 URIs, and formatting/sending responses to the client.
 
+You can find out more information about the gemini protocol here: https://gemini.circumlunar.space/
+
 ## Requirements
 - C++17 compiler
 - OpenSSL (latest recommended)
