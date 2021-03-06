@@ -7,20 +7,21 @@ Mousygem is a simple C++ based library for writing Gemini servers.
 - CMake 3.12 or newer
 
 ## Example implementation
-Here is a very simple implementation of a working server in around 30 lines of code.
+Here is a very simple implementation of a working server in 31 lines of code.
 
 ```cpp
 #include <cstdint>
 #include <openssl/ssl.h>
 #include <mousygem/mousygem.hpp>
+
 using namespace Mousygem;
 using namespace std;
 
 // Inherit the abstract class, Mousygem::Server
 class MyServer : public Server {
 public:
-    MyServer(const char *ip, uint16_t port) : Server(ip, port) {} // constructor - don't need to do anything special
-    
+    MyServer(const char *ip, uint16_t port) : Server(ip, port) {} // just pass the ip/port
+
 private:
     // Override respond(). Respond with "Hello world" and the path requested by the client.
     Response respond(const URI &uri, const Client &client) override {
@@ -32,8 +33,8 @@ int main() {
     // Initialize OpenSSL (required before we can create a server, since gemini mandates TLS)
     OpenSSL_add_ssl_algorithms();
     
-    // Create our server. Specify IP, port, key, and certificate. Note that passing nullptr to the IP address binds on all addresses.
-    MyServer server(nullptr, 1965);
+    // Create server. Specify IP, port, key, and certificate.
+    MyServer server(nullptr, 1965); // Passing nullptr as the IP binds to all addresses.
     server.use_certificate_file("cert.pem");
     server.use_private_key_file("key.pem");
     
