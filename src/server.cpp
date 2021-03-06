@@ -126,7 +126,6 @@ namespace Mousygem {
                         int length = i2d_X509(peer_certificate, &data);
                         client->certificate = std::vector<std::byte>(reinterpret_cast<std::byte *>(data), reinterpret_cast<std::byte *>(data) + length);
                         OPENSSL_free(data);
-                        client->certificate_verified = SSL_get_verify_result(ssl) == X509_V_OK;
                     }
                     response = server->respond(requested_uri, *client);
                 }

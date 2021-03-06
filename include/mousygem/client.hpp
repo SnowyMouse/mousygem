@@ -27,19 +27,11 @@ namespace Mousygem {
         std::string ip_address() const;
         
         /**
-         * Get the certificate received from the client if one was received
+         * Get the DER-encoded certificate received from the client if one was received
          * @return certificate
          */
         const std::optional<std::vector<std::byte>> &get_certificate() const noexcept {
             return this->certificate;
-        }
-        
-        /**
-         * Get whether or not the certificate could be verified
-         * @return verified
-         */
-        bool is_certificate_verified() const noexcept {
-            return this->certificate_verified;
         }
         
         ~Client();
@@ -49,7 +41,6 @@ namespace Mousygem {
         std::unique_ptr<Socket> socket;
         
         std::optional<std::vector<std::byte>> certificate;
-        bool certificate_verified = false;
         
         Client();
     };
