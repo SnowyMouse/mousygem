@@ -60,7 +60,7 @@ namespace Mousygem {
         
         // Now we can look for a colon
         auto colon = this->data.find_first_of(':', start);
-        if(colon == std::string::npos) {
+        if(colon == std::string::npos || colon >= end) {
             return std::nullopt;
         }
         
