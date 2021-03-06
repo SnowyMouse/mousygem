@@ -142,7 +142,7 @@ namespace Mousygem {
             auto code = response.get_code();
             if((code < 20 || code > 29) && response.has_data()) {
                 std::fprintf(stderr, "Tried to send a non-successful response with data\n");
-                std::terminate();
+                goto ssl_cleanup_spaghetti;
             }
         
             // Send the meta
@@ -150,25 +150,27 @@ namespace Mousygem {
                 const auto &meta = response.get_meta();
                 if(meta.size() == 0) {
                     std::fprintf(stderr, "Tried to send a response without meta\n");
-                    std::terminate();
+                    goto ssl_cleanup_spaghetti;
                 }
                 
                 char response_data[1025];
                 auto meta_size = std::snprintf(response_data, sizeof(response_data), "%i %s\r\n", code, meta.c_str());
                 if(meta_size < 0) {
-                    std::fprintf(stderr, "An error occured when encoding the response data\n");
-                    std::terminate();
+                    std::fprintf(stderr, "Failed to encode the response data\n");
+                    goto ssl_cleanup_spaghetti;
                 }
                 
                 // Limit of 1024 bytes
                 if(static_cast<std::size_t>(meta_size) >= sizeof(response_data)) {
                     std::fprintf(stderr, "Response code and meta line is too long (%zu / %zu bytes)\n", static_cast<std::size_t>(meta_size), sizeof(response_data) - 1);
-                    std::terminate();
+                    goto ssl_cleanup_spaghetti;
                 }
                 
                 // Send that
                 if(SSL_write(ssl, response_data, meta_size) <= 0) {
+                    #ifdef DEBUG
                     std::fprintf(stderr, "Failed to send response header to a client\n");
+                    #endif
                     goto ssl_cleanup_spaghetti;
                 }
             }
@@ -219,7 +221,9 @@ namespace Mousygem {
                     // Send it if we can
                     if(buffer_len) {
                         if(SSL_write(ssl, stream_buffer, buffer_len) <= 0) {
+                            #ifdef DEBUG
                             std::fprintf(stderr, "Failed to send data stream to a client\n");
+                            #endif
                             goto ssl_cleanup_spaghetti;
                         }
                     }
