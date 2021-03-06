@@ -34,13 +34,13 @@ namespace Mousygem {
          * Set the TLS certificate file (PEM format)
          * @param path path to the file
          */
-        void use_tls_certificate(const std::filesystem::path &path);
+        void use_certificate_file(const std::filesystem::path &path);
         
         /**
          * Set the TLS private key file (PEM format)
          * @param path path to the file
          */
-        void use_tls_private_key(const std::filesystem::path &path);
+        void use_private_key_file(const std::filesystem::path &path);
         
         /**
          * Begin accepting clients. This blocks until after shutdown() is called and all clients have disconnected. The TLS certificate and key must be set before this is called. This must not be called while clients are connected.

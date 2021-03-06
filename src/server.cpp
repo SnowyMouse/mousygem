@@ -65,11 +65,11 @@ namespace Mousygem {
         this->ipv4_and_ipv6 = ip_hostname == nullptr;
     }
     
-    void Server::use_tls_certificate(const std::filesystem::path &path) {
+    void Server::use_certificate_file(const std::filesystem::path &path) {
         SSL_CTX_use_certificate_file(this->ssl_context->get_context(), path.string().c_str(), SSL_FILETYPE_PEM);
     }
         
-    void Server::use_tls_private_key(const std::filesystem::path &path) {
+    void Server::use_private_key_file(const std::filesystem::path &path) {
         SSL_CTX_use_PrivateKey_file(this->ssl_context->get_context(), path.string().c_str(), SSL_FILETYPE_PEM);
     }
     
