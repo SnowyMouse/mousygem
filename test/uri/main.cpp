@@ -2,6 +2,7 @@
 #include <sstream>
 #include <mousygem/uri.hpp>
 
+using namespace std;
 using namespace Mousygem;
 
 #define test_str(a,b) { \
@@ -82,6 +83,16 @@ int main() {
     test_if_opt_is_nullopt(uri_file_root.port());
     test_str(uri_file_root.path(), "/");
     test_if_opt_is_nullopt(uri_file_root.input());
+    
+    // A technically valid URI with a %00 (null) in it - be careful with these
+    auto uri_with_null = URI("gemini://snowymouse.com/%00hey?there");
+    test_str(uri_with_null.protocol(), "gemini");
+    test_str(uri_with_null.hostname(), "snowymouse.com");
+    test_if_opt_is_nullopt(uri_with_null.port());
+    test_str(uri_with_null.path(), "/\0hey"s);
+    test_str(uri_with_null.path().size(), 5);
+    test_if_opt_is_value(uri_with_null.input(), "there");
+    
     
     ////////////////////////////////////////////////////////////////////////////
     // IPv6 tests

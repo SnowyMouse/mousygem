@@ -101,20 +101,6 @@ namespace Mousygem {
         return question_mark_offset + 1;
     }
     
-    std::string URI::hostname() const {
-        auto port_offset = this->port_offset();
-        auto hostname_offset = this->hostname_offset();
-        auto path_offset = this->path_offset();
-        
-        // If we have a port, go until that
-        if(port_offset.has_value()) {
-            return this->data.substr(hostname_offset, (*port_offset - 1) - hostname_offset);
-        }
-        else {
-            return this->data.substr(hostname_offset, path_offset - hostname_offset);
-        }
-    }
-    
     std::optional<std::uint16_t> URI::port() const {
         auto port_offset = this->port_offset();
         if(!port_offset.has_value()) {
@@ -128,21 +114,68 @@ namespace Mousygem {
         return this->data.substr(0, this->hostname_offset() - (sizeof(colon_slash_slash) - 1));
     }
     
+    static std::string decode_percent_encoding(std::string input) {
+        for(std::size_t i = 0; i + 2 < input.size(); i++) {
+            if(input[i] == '%') {
+                auto to_hex_upper = [](char input) -> std::optional<int> {
+                    if(input >= '0' && input <= '9') {
+                        return input - '0';
+                    }
+                    if(input >= 'a' && input <= 'f') {
+                        return input - 'a' + 10;
+                    }
+                    if(input >= 'A' && input <= 'F') {
+                        return input - 'A' + 10;
+                    }
+                    
+                    return std::nullopt;
+                };
+                
+                auto d1 = to_hex_upper(input[i + 1]);
+                auto d2 = to_hex_upper(input[i + 2]);
+                
+                // Skip if no hex character for both
+                if(!d1.has_value() || !d2.has_value()) {
+                    continue;
+                }
+                
+                // Otherwise replace the % with the character and delete the two memes after it
+                input[i] = (*d1 * 0x10) | *d2;
+                input.erase(i + 1, 2);
+            }
+        }
+        return input;
+    }
+    
+    std::string URI::hostname() const {
+        auto port_offset = this->port_offset();
+        auto hostname_offset = this->hostname_offset();
+        auto path_offset = this->path_offset();
+        
+        // If we have a port, go until that
+        if(port_offset.has_value()) {
+            return decode_percent_encoding(this->data.substr(hostname_offset, (*port_offset - 1) - hostname_offset));
+        }
+        else {
+            return decode_percent_encoding(this->data.substr(hostname_offset, path_offset - hostname_offset));
+        }
+    }
+    
     std::optional<std::string> URI::input() const {
         auto input_offset = this->input_offset();
         if(!input_offset.has_value()) {
             return std::nullopt;
         }
-        return this->data.substr(*input_offset);
+        return decode_percent_encoding(this->data.substr(*input_offset));
     }
     
     std::string URI::path() const {
         auto path_offset = this->path_offset();
         auto input_offset = this->input_offset();
         if(input_offset.has_value()) {
-            return this->data.substr(path_offset, (*input_offset - 1) - path_offset);
+            return decode_percent_encoding(this->data.substr(path_offset, (*input_offset - 1) - path_offset));
         }
         
-        return this->data.substr(path_offset);
+        return decode_percent_encoding(this->data.substr(path_offset));
     }
 }
