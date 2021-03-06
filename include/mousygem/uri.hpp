@@ -5,12 +5,17 @@
 #include <string>
 
 namespace Mousygem {
+    /**
+     * URIs are used by the client to tell the server what to retrieve. They can also (optionally) contain a port.
+     * 
+     * Example: gemini://snowymouse.com:1965
+     */
     class URI {
     public:
         /**
          * Construct a URI
          * @param uri_string input string
-         * @throws invalid_argument if URI is invalid
+         * @throws std::invalid_argument if URI is invalid
          */
         URI(const std::string &uri_string);
         
@@ -18,7 +23,7 @@ namespace Mousygem {
          * Construct a URI
          * @param uri_string input string
          * @return reference to URI
-         * @throws invalid_argument if URI is invalid
+         * @throws std::invalid_argument if URI is invalid
          */
         URI &operator =(const std::string &uri_string);
         
