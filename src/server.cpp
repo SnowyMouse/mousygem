@@ -120,6 +120,8 @@ namespace Mousygem {
                 }
                 catch(std::exception &) {
                     error = true;
+                    
+                    response = Response(Response::ResponseCode::BadRequest, "invalid uri");
                 }
             }
         }
@@ -163,7 +165,7 @@ namespace Mousygem {
         
         // Next, send the data if we have it
         if(response.has_data()) {
-            auto *data_vector = std::get_if<std::vector<std::byte>>(&response.data);
+            auto *data_vector = std::get_if<std::vector<std::byte>>(&*response.data);
             if(data_vector) {
                 std::size_t bytes_sent = 0;
                 while(bytes_sent < data_vector->size()) {
@@ -179,7 +181,7 @@ namespace Mousygem {
                 }
             }
             
-            auto *data_stream = std::get_if<std::ifstream>(&response.data);
+            auto *data_stream = std::get_if<std::ifstream>(&*response.data);
             if(data_stream) {
                 while(*data_stream) {
                     char stream_buffer[4096];

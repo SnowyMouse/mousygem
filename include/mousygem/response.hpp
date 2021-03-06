@@ -7,6 +7,7 @@
 #include <istream>
 #include <fstream>
 #include <variant>
+#include <optional>
 
 namespace Mousygem {
     class Server;
@@ -77,12 +78,20 @@ namespace Mousygem {
         };
         
         /**
-         * Construct a response with an optional data
+         * Construct a response without data.
          * @param code response code to send
          * @param meta meta to send
-         * @param data data to send after the response (optional - should only be used with response 2X codes)
          */
-        Response(ResponseCode code, const std::string &meta, const std::vector<std::byte> &data = {}) :
+        Response(ResponseCode code, const std::string &meta) :
+            code(code), meta(meta) {}
+        
+        /**
+         * Construct a response with data. This should only be used with response 2X codes.
+         * @param code response code to send
+         * @param meta meta to send
+         * @param data data to send after the response
+         */
+        Response(ResponseCode code, const std::string &meta, const std::vector<std::byte> &data) :
             code(code), meta(meta), data(data) {}
         
         /**
@@ -172,7 +181,7 @@ namespace Mousygem {
          * Clear the data
          */
         void clear_data() noexcept {
-            data = {};
+            this->data = std::nullopt;
         }
         
         /**
@@ -180,7 +189,7 @@ namespace Mousygem {
          * @return true if we have data
          */
         bool has_data() const noexcept {
-            return data.index() != std::variant_npos;
+            return data.has_value();
         }
         
     private:
@@ -191,7 +200,7 @@ namespace Mousygem {
         std::string meta;
         
         /** Data we're sending */
-        std::variant<std::vector<std::byte>, std::ifstream> data;
+        std::optional<std::variant<std::vector<std::byte>, std::ifstream>> data;
     };
 }
 
