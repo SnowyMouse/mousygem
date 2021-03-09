@@ -117,17 +117,21 @@ namespace Mousygem {
                     // Only accept gemini connections
                     if(requested_uri.protocol() != "gemini") {
                         error = true;
+                        response = Response(Response::ResponseCode::BadRequest, "invalid protocol (this server only accepts gemini:// requests)");
                     }
                     
-                    // Check if we got a certificate from them
-                    auto *peer_certificate = SSL_get_peer_certificate(ssl);
-                    if(peer_certificate) {
-                        unsigned char *data = nullptr;
-                        int length = i2d_X509(peer_certificate, &data);
-                        client->certificate = std::vector<std::byte>(reinterpret_cast<std::byte *>(data), reinterpret_cast<std::byte *>(data) + length);
-                        OPENSSL_free(data);
+                    else {
+                        // Check if we got a certificate from them
+                        auto *peer_certificate = SSL_get_peer_certificate(ssl);
+                        if(peer_certificate) {
+                            unsigned char *data = nullptr;
+                            int length = i2d_X509(peer_certificate, &data);
+                            client->certificate = std::vector<std::byte>(reinterpret_cast<std::byte *>(data), reinterpret_cast<std::byte *>(data) + length);
+                            OPENSSL_free(data);
+                        }
+                        
+                        response = server->respond(requested_uri, *client);
                     }
-                    response = server->respond(requested_uri, *client);
                 }
                 catch(std::exception &) {
                     error = true;
