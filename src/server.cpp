@@ -292,8 +292,8 @@ namespace Mousygem {
         
         // We don't want to wait forever (in case we want to arbitrarily close the server)
         struct timeval timeout;
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 100;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
         setsockopt(socket_handle, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
         
         // Actually bind now
