@@ -109,34 +109,42 @@ namespace Mousygem {
                 }
             }
             
+            std::optional<URI> requested_uri;
+            
             // Validate it.
             if(!error) {
                 try {
-                    URI requested_uri = std::string(uri_input, offset - 2);
+                    requested_uri = std::string(uri_input, offset - 2);
                     
                     // Only accept gemini connections
-                    if(requested_uri.protocol() != "gemini") {
+                    if(requested_uri->protocol() != "gemini") {
                         error = true;
                         response = Response(Response::ResponseCode::BadRequest, "invalid protocol (this server only accepts gemini:// requests)");
-                    }
-                    
-                    else {
-                        // Check if we got a certificate from them
-                        auto *peer_certificate = SSL_get_peer_certificate(ssl);
-                        if(peer_certificate) {
-                            unsigned char *data = nullptr;
-                            int length = i2d_X509(peer_certificate, &data);
-                            client->certificate = std::vector<std::byte>(reinterpret_cast<std::byte *>(data), reinterpret_cast<std::byte *>(data) + length);
-                            OPENSSL_free(data);
-                        }
-                        
-                        response = server->respond(requested_uri, *client);
                     }
                 }
                 catch(std::exception &) {
                     error = true;
-                    
                     response = Response(Response::ResponseCode::BadRequest, "invalid uri");
+                }
+            }
+            
+            // Get the response
+            if(!error) {
+                // Check if we got a certificate from them
+                auto *peer_certificate = SSL_get_peer_certificate(ssl);
+                if(peer_certificate) {
+                    unsigned char *data = nullptr;
+                    int length = i2d_X509(peer_certificate, &data);
+                    client->certificate = std::vector<std::byte>(reinterpret_cast<std::byte *>(data), reinterpret_cast<std::byte *>(data) + length);
+                    OPENSSL_free(data);
+                }
+                
+                try {
+                    response = server->respond(*requested_uri, *client);
+                }
+                catch (std::exception &e) {
+                    std::fprintf(stderr, "Exception error when handling request: %s\n", e.what());
+                    response = Response(Response::TemporaryFailure, "server error");
                 }
             }
         }
@@ -145,8 +153,9 @@ namespace Mousygem {
         {
             auto code = response.get_code();
             if((code < 20 || code > 29) && response.has_data()) {
-                std::fprintf(stderr, "Tried to send a non-successful response with data\n");
-                goto ssl_cleanup_spaghetti;
+                std::fprintf(stderr, "Tried to send a non-success response (i.e. 2x) with data\n");
+                response = Response(Response::TemporaryFailure, "server error");
+                code = response.get_code();
             }
         
             // Send the meta
