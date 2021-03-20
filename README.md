@@ -35,7 +35,7 @@ private:
 };
 
 int main() {
-    // Initialize OpenSSL (required before we can create a server, since gemini mandates TLS)
+    // Initialize OpenSSL (required before we can create a server since we use OpenSSL)
     OpenSSL_add_ssl_algorithms();
     
     // Create server. Specify IP, port, key, and certificate.
